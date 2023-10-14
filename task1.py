@@ -4,8 +4,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import matplotlib.pyplot as plt 
-from torch.utils.data import TensorDataset, DataLoader
+import matplotlib.pyplot as plt
+from PIL import Image 
+from torch.utils.data import Dataset, TensorDataset, DataLoader
 from torchvision import transforms, datasets, models
 from torchvision.models import resnet50, ResNet50_Weights
 from sklearn.model_selection import train_test_split
@@ -18,10 +19,10 @@ CLASSES = ['AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway', 'Industria
            'Pasture', 'PermanentCrop', 'Residential', 'River', 'SeaLake']
 
 # Number of images to take from each class
-num_images_per_class = 1500
+num_images_per_class = 30
 
 # Task 1: Custom Dataset class implementation
-class EuroSATDataset(torch.utils.data.Dataset):
+class EuroSATDataset(Dataset):
     def __init__(self, data_dir, transform=None):
         self.data_dir = data_dir
         self.transform = transform
@@ -43,13 +44,17 @@ class EuroSATDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         image_path = self.image_paths[idx]
-        image = cv2.imread(image_path)[:,:,::-1]  # Read image in BGR, convert to RGB
-        image = cv2.resize(image, (224, 224))  # Resize image to desired size
+        image = Image.open(image_path)  # Use PIL to open the image
+        image = image.convert('RGB')  # Convert to RGB if not already
         label = self.labels[idx]
 
         if self.transform:
+            # Apply the transformation to get a tensor
             image = self.transform(image)
 
+        # Convert the image to a tensor if not already
+        image = transforms.ToTensor()(image)
+    
         return image, label
 
 # Task 2: Data Preparation and Splitting
@@ -276,6 +281,13 @@ def main():
     num_epochs = 3
     best_val_loss = float('inf')
 
+    # Task 5: Validation Loop with data augmentation
+    augmentation_transforms = {
+        'HorizontalFlip': transforms.Compose([transforms.RandomHorizontalFlip()]),
+        'ColorJitter': transforms.Compose([transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)]),
+        'RandomRotation': transforms.Compose([transforms.RandomRotation(degrees=30)])
+    }
+
     for epoch in range(num_epochs):
         print("=" * 50)
 
@@ -284,12 +296,27 @@ def main():
         print(f"Epoch {epoch+1}/{num_epochs}, Training Loss: {train_loss:.4f}")
         train_losses.append(train_loss)
 
-        # Task 5: Validation Loop
+        # Task 5: Validation Loop with data augmentation
         val_loss, val_avg_precision, val_accuracy, avg_accuracy = validate_model(model, val_loader, criterion, device)
         print(f"Validation Loss: {val_loss:.4f}")
         print(f"Validation Average Precision per Class: {val_avg_precision}")
         print(f"Validation Accuracy per Class: {val_accuracy}")
         print(f"Average Validation Accuracy: {avg_accuracy:.4f}")
+
+        # Apply data augmentation to the validation dataset for each type
+        for augment_name, augment_transform in augmentation_transforms.items():
+            augmented_val_loader = DataLoader(
+                EuroSATDataset(DATA_DIR, transform=augment_transform),
+                batch_size=32
+            )
+            augmented_val_loss, aug_val_avg_precision, aug_val_accuracy, avg_aug_val_accuracy = validate_model(model, augmented_val_loader, criterion, device)
+            
+            print(f"\nValidation with {augment_name}")
+            print(f"Validation Loss: {augmented_val_loss:.4f}")
+            print(f"Validation Average Precision per Class: {aug_val_avg_precision}")
+            print(f"Validation Accuracy per Class: {aug_val_accuracy}")
+            print(f"Average Validation Accuracy: {avg_aug_val_accuracy:.4f}")
+
         val_losses.append(val_loss)
 
         # Check if this is the best validation loss
