@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from PIL import Image 
 from torch.utils.data import Dataset, TensorDataset, DataLoader
 from torchvision import transforms
+from torchvision.transforms import RandomInvert
 from torchvision.models import resnet50, ResNet50_Weights
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import label_binarize
@@ -236,7 +237,7 @@ def test_model(model, test_loader, criterion, device):
     return average_loss, avg_precision_per_class, accuracy_per_class, avg_accuracy
 
 
-def main_multilabel():
+def main():
     print("EuroSAT Multi-Label Classification")
     print("=" * 50)
 
@@ -282,7 +283,7 @@ def main_multilabel():
     best_val_loss = float('inf')
 
     augmentation_transforms = {
-        'HorizontalFlip': transforms.Compose([transforms.RandomHorizontalFlip()]),
+        'RandomInvert': RandomInvert(p=0.5)
     }
 
     for epoch in range(num_epochs):
@@ -343,4 +344,4 @@ def main_multilabel():
 
 
 if __name__ == "__main__":
-    main_multilabel()
+    main()

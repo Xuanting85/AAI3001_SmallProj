@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from PIL import Image 
 from torch.utils.data import Dataset, TensorDataset, DataLoader
 from torchvision import transforms
+from torchvision.transforms import ElasticTransform, RandomInvert, RandomSolarize, InterpolationMode
 from torchvision.models import resnet50, ResNet50_Weights
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import label_binarize
@@ -271,9 +272,9 @@ def main():
     best_val_loss = float('inf')
 
     augmentation_transforms = {
-        'HorizontalFlip': transforms.Compose([transforms.RandomHorizontalFlip()]),
-        'ColorJitter': transforms.Compose([transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)]),
-        'RandomRotation': transforms.Compose([transforms.RandomRotation(degrees=30)])
+        'ElasticTransform': ElasticTransform(alpha=50.0, sigma=5.0, interpolation=InterpolationMode.BILINEAR, fill=0),
+        'RandomInvert': RandomInvert(p=0.5),
+        'RandomSolarize': RandomSolarize(threshold=128, p=0.5)
     }
 
     for epoch in range(num_epochs):
