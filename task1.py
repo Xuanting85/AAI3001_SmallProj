@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from PIL import Image 
 from torch.utils.data import Dataset, TensorDataset, DataLoader
 from torchvision import transforms
-from torchvision.transforms import ElasticTransform, RandomInvert, RandomSolarize, InterpolationMode
 from torchvision.models import resnet50, ResNet50_Weights
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import label_binarize
@@ -271,10 +270,27 @@ def main():
     num_epochs = 3
     best_val_loss = float('inf')
 
+    val_transform_set1 = transforms.Compose([
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomAffine(degrees=30, translate=(0.1, 0.1), scale=(0.8, 1.2)),
+    ])
+
+    val_transform_set2 = transforms.Compose([
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+        transforms.CenterCrop(180),
+    ])
+
+    val_transform_set3 = transforms.Compose([
+        transforms.RandomRotation(degrees=30),
+        transforms.RandomInvert(p=0.5),
+        transforms.Resize(224),
+    ])
+
+    # Create a dictionary to associate transformation names with their corresponding transformations
     augmentation_transforms = {
-        'ElasticTransform': ElasticTransform(alpha=50.0, sigma=5.0, interpolation=InterpolationMode.BILINEAR, fill=0),
-        'RandomInvert': RandomInvert(p=0.5),
-        'RandomSolarize': RandomSolarize(threshold=128, p=0.5)
+        'Augmentation Set 1': val_transform_set1,
+        'Augmentation Set 2': val_transform_set2,
+        'Augmentation Set 3': val_transform_set3,
     }
 
     for epoch in range(num_epochs):
@@ -299,7 +315,7 @@ def main():
                 batch_size=32
             )
             augmented_val_loss, aug_val_avg_precision, aug_val_accuracy, avg_aug_val_accuracy = validate_model(model, augmented_val_loader, criterion, device)
-            
+    
             print(f"\nValidation with {augment_name}")
             print(f"Validation Loss: {augmented_val_loss:.4f}")
             print(f"Validation Average Precision per Class: {aug_val_avg_precision}")
