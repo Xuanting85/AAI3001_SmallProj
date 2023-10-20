@@ -19,7 +19,7 @@ CLASSES = ['AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway', 'Industria
            'Pasture', 'PermanentCrop', 'Residential', 'River', 'SeaLake']
 
 # Number of images to take from each class
-num_images_per_class = 30
+num_images_per_class = 50
 
 class EuroSATDataset(Dataset):
     def __init__(self, data_dir, transform=None):
@@ -56,6 +56,7 @@ class EuroSATDataset(Dataset):
     
         return image, label
 
+
 def load_and_split_dataset(data_dir, random_seed=42):
     # Lists to store data and labels
     data = []
@@ -83,6 +84,7 @@ def load_and_split_dataset(data_dir, random_seed=42):
 
     return (train_data, train_labels), (val_data, val_labels), (test_data, test_labels)
 
+
 def build_model(num_classes):
     # Load the pre-trained ResNet-50 model
     model = resnet50(weights=ResNet50_Weights.DEFAULT)
@@ -99,6 +101,7 @@ def build_model(num_classes):
     optimizer = optim.Adam(model.fc.parameters(), lr=0.001)
     
     return model, criterion, optimizer
+
 
 def train_model(model, train_loader, criterion, optimizer, device):
     model.train()  # Set the model to training mode
@@ -128,6 +131,7 @@ def train_model(model, train_loader, criterion, optimizer, device):
     average_loss = running_loss / len(train_loader)
 
     return average_loss
+
 
 def validate_model(model, val_loader, criterion, device):
     model.eval()  # Set the model to evaluation mode
@@ -175,6 +179,7 @@ def validate_model(model, val_loader, criterion, device):
     avg_accuracy = sum(accuracy_per_class) / len(CLASSES)
 
     return average_loss, avg_precision_per_class, accuracy_per_class, avg_accuracy
+
 
 def test_model(model, test_loader, criterion, device):
     model.eval()  # Set the model to evaluation mode
@@ -338,6 +343,11 @@ def main():
     print(f"Test Accuracy per Class: {test_accuracy}")
     print(f"Average Test Accuracy: {avg_test_accuracy:.4f}")
 
+    # Save the trained model
+    model_name = 'image_resnet50_model.pth'
+    torch.save(best_model.state_dict(), model_name)
+    print(f"Best model saved as {model_name}")
+
     # Plotting loss curves
     plt.figure(figsize=(10, 5))
     plt.plot(range(1, num_epochs+1), train_losses, label='Training Loss')
@@ -348,6 +358,10 @@ def main():
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.show()
+
+    plot_filename = 'Task 1_Training and Loss Curves.png'
+    plt.savefig(plot_filename)
+    print(f"Loss curve plot saved as {plot_filename}")
 
 
 if __name__ == "__main__":

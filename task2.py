@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from PIL import Image 
 from torch.utils.data import Dataset, TensorDataset, DataLoader
 from torchvision import transforms
-from torchvision.transforms import RandomInvert
 from torchvision.models import resnet50, ResNet50_Weights
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import label_binarize
@@ -20,7 +19,7 @@ CLASSES = ['AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway', 'Industria
            'Pasture', 'PermanentCrop', 'Residential', 'River', 'SeaLake']
 
 # Number of images to take from each class
-num_images_per_class = 30
+num_images_per_class = 50
 
 class EuroSATDataset(Dataset):
     def __init__(self, data_dir, transform=None):
@@ -282,8 +281,14 @@ def main():
     num_epochs = 3
     best_val_loss = float('inf')
 
+    val_transform_set3 = transforms.Compose([
+        transforms.RandomRotation(degrees=30),
+        transforms.RandomInvert(p=0.5),
+        transforms.Resize(224),
+    ])
+
     augmentation_transforms = {
-        'RandomInvert': RandomInvert(p=0.5)
+        'Augmentation Set 3': val_transform_set3,
     }
 
     for epoch in range(num_epochs):
@@ -331,6 +336,11 @@ def main():
     print(f"Test Accuracy per Class: {test_accuracy}")
     print(f"Average Test Accuracy: {avg_test_accuracy:.4f}")
 
+    # Save the trained model
+    model_name = 'image_resnet50_multilabel_model.pth'
+    torch.save(best_model.state_dict(), model_name)
+    print(f"Best model saved as {model_name}")
+
     # Plotting loss curves
     plt.figure(figsize=(10, 5))
     plt.plot(range(1, num_epochs+1), train_losses, label='Training Loss')
@@ -341,6 +351,10 @@ def main():
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.show()
+
+    plot_filename = 'Task 2_Training and Loss Curves.png'
+    plt.savefig(plot_filename)
+    print(f"Loss curve plot saved as {plot_filename}")
 
 
 if __name__ == "__main__":
