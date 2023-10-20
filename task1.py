@@ -357,11 +357,13 @@ def main():
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss')
     plt.legend()
-    plt.show()
+    
 
     plot_filename = 'Task 1_Training and Validation Loss Curves.png'
     plt.savefig(plot_filename)
     print(f"Loss curve plot saved as {plot_filename}")
+
+    plt.show()
 
 
 if __name__ == "__main__":
