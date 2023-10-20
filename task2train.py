@@ -1,0 +1,122 @@
+import os
+import cv2
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import matplotlib.pyplot as plt
+from PIL import Image 
+from torch.utils.data import Dataset, TensorDataset, DataLoader
+from torchvision import transforms
+from torchvision.models import resnet50, ResNet50_Weights
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import label_binarize
+from sklearn.metrics import average_precision_score, accuracy_score
+import utils
+from utils import EuroSATDataset2, DATA_DIR, load_and_split_dataset2, CLASSES
+
+def build_model(num_classes):
+    # Load the pre-trained ResNet-50 model
+    model = resnet50(weights=ResNet50_Weights.DEFAULT)
+    
+    # Modify the final classification layer for the specified number of classes
+    model.fc = nn.Linear(model.fc.in_features, num_classes)
+    
+    # Define the loss function and optimizer for multi-label classification
+    criterion = nn.BCEWithLogitsLoss()
+    optimizer = optim.Adam(model.fc.parameters(), lr=0.001)
+    
+    return model, criterion, optimizer
+
+def train_model(model, train_loader, criterion, optimizer, device):
+    model.train()  # Set the model to training mode
+    running_loss = 0.0
+
+    for images, labels in train_loader:
+        images = images.permute(0, 3, 1, 2)  # Change the dimension order
+        images = images.float()  # Convert images to FloatTensor
+        images = images[:, :3, :, :]  # Keep only the first 3 channels (for RGB)
+        labels = labels.float()  # Convert labels to FloatTensor
+        images, labels = images.to(device), labels.to(device)
+
+        # Zero the parameter gradients
+        optimizer.zero_grad()
+
+        # Forward pass
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+
+        # Backward pass and optimize
+        loss.backward()
+        optimizer.step()
+
+        # Accumulate loss for reporting
+        running_loss += loss.item()
+
+    # Calculate average loss for the epoch
+    average_loss = running_loss / len(train_loader)
+
+    return average_loss
+
+def main():
+    print("EuroSAT Multi-Label Classification")
+    print("=" * 50)
+
+    transform = transforms.Compose([transforms.ToTensor()])
+    dataset = EuroSATDataset2(DATA_DIR, transform=transform)
+
+    (train_data, train_labels), (val_data, val_labels), (test_data, test_labels) = load_and_split_dataset2(DATA_DIR)
+    print(f"Number of samples in training set: {len(train_data)}")
+
+    model, criterion, optimizer = build_model(len(CLASSES))
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+
+    print("\nTraining the model...")
+
+    # Convert data to numpy arrays before creating tensors
+    train_data = np.array(train_data)
+    train_labels = np.array(train_labels)
+
+     # Create DataLoader for training set
+    train_dataset = TensorDataset(torch.tensor(train_data), torch.tensor(train_labels))
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+
+    # Lists to store loss for plotting
+    train_losses = []
+    
+    num_epochs = 3
+
+    val_transform_set3 = transforms.Compose([
+        transforms.RandomRotation(degrees=30),
+        transforms.RandomInvert(p=0.5),
+        transforms.Resize(224),
+    ])
+
+    augmentation_transforms = {
+        'Augmentation Set 3': val_transform_set3,
+    }
+
+    for epoch in range(num_epochs):
+        print("=" * 50)
+
+        # Train the model for one epoch
+        train_loss = train_model(model, train_loader, criterion, optimizer, device)
+        print(f"Epoch {epoch+1}/{num_epochs}, Training Loss: {train_loss:.4f}")
+        train_losses.append(train_loss)
+
+    # Plotting loss curves
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, num_epochs+1), train_losses, label='Training Loss')
+    plt.xticks(range(1, num_epochs+1)) 
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training Loss')
+    plt.legend()
+
+    plt.show()
+
+    
+if __name__ == "__main__":
+    main()
+    
