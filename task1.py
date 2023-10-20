@@ -357,7 +357,6 @@ def main():
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss')
     plt.legend()
-    
 
     plot_filename = 'Task 1_Training and Validation Loss Curves.png'
     plt.savefig(plot_filename)

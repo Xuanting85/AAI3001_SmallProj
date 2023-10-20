@@ -2,11 +2,8 @@ import os
 import cv2
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as optim
-import matplotlib.pyplot as plt
 from PIL import Image 
-from torch.utils.data import Dataset, TensorDataset, DataLoader
+from torch.utils.data import Dataset
 from torchvision import transforms
 from sklearn.model_selection import train_test_split
 
@@ -18,7 +15,7 @@ CLASSES = ['AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway', 'Industria
 # Number of images to take from each class
 num_images_per_class = 50
 
-class EuroSATDataset1(Dataset):
+class EuroSATImageDataset(Dataset):
     def __init__(self, data_dir, transform=None):
         self.data_dir = data_dir
         self.transform = transform
@@ -53,7 +50,8 @@ class EuroSATDataset1(Dataset):
     
         return image, label
 
-class EuroSATDataset2(Dataset):
+
+class EuroSATMultiLabelDataset(Dataset):
     def __init__(self, data_dir, transform=None):
         self.data_dir = data_dir
         self.transform = transform
@@ -91,7 +89,8 @@ class EuroSATDataset2(Dataset):
 
         return image, label_one_hot
 
-def load_and_split_dataset1(data_dir, random_seed=42):
+
+def load_and_split_image_dataset(data_dir, random_seed=42):
     # Lists to store data and labels
     data = []
     labels = []
@@ -119,8 +118,7 @@ def load_and_split_dataset1(data_dir, random_seed=42):
     return (train_data, train_labels), (val_data, val_labels), (test_data, test_labels)
 
 
-
-def load_and_split_dataset2(data_dir, random_seed=42):
+def load_and_split_multilabel_dataset(data_dir, random_seed=42):
     # Lists to store data and modified labels
     data = []
     modified_labels = []

@@ -1,21 +1,14 @@
-import os
-import cv2
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as optim
 import matplotlib.pyplot as plt
-from PIL import Image 
-from torch.utils.data import Dataset, TensorDataset, DataLoader
+from torch.utils.data import TensorDataset, DataLoader
 from torchvision import transforms
-from torchvision.models import resnet50, ResNet50_Weights
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import average_precision_score, accuracy_score
 
-import utils
-from task1train import build_model,train_model
-from utils import load_and_split_dataset1, EuroSATDataset1, DATA_DIR, CLASSES
+from task1train import build_model, train_model
+from utils import DATA_DIR, CLASSES, EuroSATImageDataset, load_and_split_image_dataset
+
 
 def validate_model(model, val_loader, criterion, device):
     model.eval()  # Set the model to evaluation mode
@@ -118,10 +111,10 @@ def main():
     print("=" * 50)
 
     transform = transforms.Compose([transforms.ToTensor()])
-    dataset = EuroSATDataset1(DATA_DIR, transform=transform)
+    dataset = EuroSATImageDataset(DATA_DIR, transform=transform)
     # print(f"Total number of samples in the dataset: {len(dataset)}")
 
-    (train_data, train_labels), (val_data, val_labels), (test_data, test_labels) = load_and_split_dataset1(DATA_DIR)
+    (train_data, train_labels), (val_data, val_labels), (test_data, test_labels) = load_and_split_image_dataset(DATA_DIR)
     print(f"Number of samples in training set: {len(train_data)}")
     print(f"Number of samples in validation set: {len(val_data)}")
     print(f"Number of samples in test set: {len(test_data)}")
@@ -200,7 +193,7 @@ def main():
         # Apply data augmentation to the validation dataset for each type
         for augment_name, augment_transform in augmentation_transforms.items():
             augmented_val_loader = DataLoader(
-                EuroSATDataset1(DATA_DIR, transform=augment_transform),
+                EuroSATImageDataset(DATA_DIR, transform=augment_transform),
                 batch_size=32
             )
             augmented_val_loss, aug_val_avg_precision, aug_val_accuracy, avg_aug_val_accuracy = validate_model(model, augmented_val_loader, criterion, device)
@@ -227,11 +220,6 @@ def main():
     print(f"Test Accuracy per Class: {test_accuracy}")
     print(f"Average Test Accuracy: {avg_test_accuracy:.4f}")
 
-    # Save the trained model
-    model_name = 'image_resnet50_model.pth'
-    torch.save(best_model.state_dict(), model_name)
-    print(f"Best model saved as {model_name}")
-
     # Plotting loss curves
     plt.figure(figsize=(10, 5))
     plt.plot(range(1, num_epochs+1), train_losses, label='Training Loss')
@@ -242,7 +230,6 @@ def main():
     plt.title('Training and Validation Loss')
     plt.legend()
     
-
     plot_filename = 'Task 1_Training and Validation Loss Curves.png'
     plt.savefig(plot_filename)
     print(f"Loss curve plot saved as {plot_filename}")
