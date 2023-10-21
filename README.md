@@ -33,6 +33,7 @@ AAI3001_SmallProj
 │   ├── task1.py
 │   ├── task2.py
 ├── AA13001 - Small Project.pdf
+├── README.md
 ├── image_resnet50_model.pth
 ├── image_resnet50_multiLabel_model.pth
 ├── Task 1_Training and Validation Loss Curves.png
@@ -41,8 +42,7 @@ AAI3001_SmallProj
 ├── task1validate.py
 ├── task2train.py
 ├── task2validate.py
-├── utils.py
-└── README.md
+└── utils.py
 ```
 
 ## Python Scripts/Files
