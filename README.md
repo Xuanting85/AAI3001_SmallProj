@@ -1,3 +1,10 @@
+# AAI3001 Computer Vision and Deep Learning Project
+<div style="text-align: justify;">
+
+This project's overall objective is the prediction of dominant land use from Zenodo satellite images from EuroSAT dataset. The structured approach used includes data preprocessing and splitting, training the data model and validation of results. The models are then evaluated for their performances to ensure accuracy in their predictions. There are a total of 5 main python files used. The utils.py file is a shared module between Task 1 and Task 2.
+
+</div>
+
 ## Dependencies
 - Matplotlib
 - Numpy
